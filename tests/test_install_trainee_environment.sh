@@ -15,11 +15,11 @@ test__should_be_successful() {
 }
 
 test__should_failed_without_parameters() {
-  result=$(source "${SCRIPT_PATH}" --source-only 2>&1)
+  result=$(source "${SCRIPT_PATH}" 2>&1)
   code=$?
 
-  printf "${result}"
-  assertEquals "Wrong return code" '0' "${code}"
+  assertEquals 'Wrong usage message' "$(cat tests/expected/usage_message.txt)" "${result}"
+  assertEquals "Wrong return code" '1' "${code}"
 }
 
 # Eat all command-line arguments before calling shunit2.
