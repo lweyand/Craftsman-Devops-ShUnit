@@ -1,8 +1,8 @@
-# Craftsman + DevOps = shUnit
+# Tester ses scripts shell avec shUnit2, ou comment un Devops devient Craftsman
 
 Je présente ici l'utilisation de shUnit2 sur un cas concret. Ce projet est utilisé pour des talks/BBL/...
 
-Pour avoir suivi le mouvement CraftsmanShip depuis ses débuts, et être à présent dans le DevOps, lorsque j'arrive sur un projet je gardes les mêmes réflexes. Lorsque je dois intervenir sur du code, je commence par écrire des tests si il n'y en a pas. Ceci me permet de ne pas avoir de régressions.
+Pour avoir suivi le mouvement CraftsmanShip depuis ses débuts, et aider nos clients dans leur démarche DevOps, lorsque j'arrive sur un projet je garde les mêmes réflexes. Lorsque je dois intervenir sur du code, je commence par écrire des tests s'il n'y en a pas. Ceci me permet de ne pas avoir de régressions.
 Lorsque j'ai commencé à intervenir sur des scripts de déploiement, j'ai toujours été surpris par le peu de tests existants.
 Ceci est donc mon retour d'expérience dans le cas de scripts shell qui tâchent.
 
@@ -21,14 +21,14 @@ sudo apt install shunit2
 ## Sous le capot:
 
 Quand shunit est *sourcé*, il va:
-* Parcourir toutes les functions qui commencent par **test** et les ajouter à sa liste de tests.
-* Avant d'éxécuter les tests, il va exécuter la function **oneTimeSetUp()**, à la fin de tous les tests, il pourra exécuter **oneTimeTearDown()**.
-* Avant chaque test, il va exécuter la funtion **setUp()**, et après chaque test, il va exécuter **tearDown()**.
+* Parcourir toutes les functions qui commencent par `test` et les ajouter à sa liste de tests.
+* Avant d'éxécuter les tests, il va exécuter la function `oneTimeSetUp()`. À la fin de tous les tests, il pourra exécuter `oneTimeTearDown()`.
+* Avant chaque test, il va exécuter la funtion `setUp()`, et après chaque test, il va exécuter `tearDown()`.
 * À la fin, il va générer un rapport
 
-shunit fournit toute une [suite d'assertions](https://github.com/kward/shunit2#-asserts): assertEquals, assertNotEquals, assertSame, assertNotSame, assertContains, assertNotContains, assertNull, assertNotNull, assertTrue, assertFalse
+shunit fournit toute une [suite d'assertions](https://github.com/kward/shunit2#-asserts): `assertEquals`, `assertNotEquals`, `assertSame`, `assertNotSame`, `assertContains`, `assertNotContains`, `assertNull`, `assertNotNull`, `assertTrue`, `assertFalse`
 
-Shells supportés, [voir relase note 2.1.8](https://github.com/kward/shunit2/blob/master/doc/RELEASE_NOTES-2.1.8.md):
+Shells supportés, [voir release note 2.1.8](https://github.com/kward/shunit2/blob/master/doc/RELEASE_NOTES-2.1.8.md):
 * sh
 * ash
 * bash
@@ -91,7 +91,7 @@ source "$(which shunit2)"
 
 Créons le premier test de notre script:
 ```shell
-test_should_failed_without_parameters() {
+test__should_fail_without_parameters() {
   result=$(source "${SCRIPT_PATH}" 2>&1)
   code=$?
 
@@ -117,7 +117,7 @@ fi
 
 Le test est mis à jour:
 ```shell
-test_should_failed_without_parameters() {
+test__should_fail_without_parameters() {
   result=$(source "${SCRIPT_PATH}" --source-only 2>&1)
   ...
 ```
@@ -126,7 +126,7 @@ test_should_failed_without_parameters() {
 
 ## Tester les retours attendus
 
-Le test **test_should_failed_without_parameters** n'est pas satisfaisant en l'état, car il ne reflète pas l'intention du test: il doit être en erreur sans paramètre passé à la commande.
+Le test `test__should_fail_without_parameters` n'est pas satisfaisant en l'état, car il ne reflète pas l'intention du test: il doit être en erreur sans paramètre passé à la commande.
 
 Il faut donc tester le retour de la commande en erreur dans un assert
 ```shell
@@ -147,7 +147,7 @@ test_should_failed_without_parameters() {
  - delete_rp: delete reverse proxy
  - delete_cl: delete cluster
  - delete_pj: delete project
- - delete: delete reverse proxy and delete clsuter (in this order)
+ - delete: delete reverse proxy and delete cluster (in this order)
  - get_cred: init kubectl
  - info: display trainees infos
  - -h, --help: display this help message' "${result}"
@@ -160,7 +160,7 @@ Il y a des espace en fin de ligne dans le message d'utilisation... :(
 
 Solution: supprimer les **' \n'** du script d'origine
 
-Amélioration: mettre le message attendu dans un fichier extern.
+Amélioration: mettre le message attendu dans un fichier externe.
 ```shell
 nano tests/expected/usage_message.txt:
 ```
@@ -179,7 +179,7 @@ Usage:
  - delete_rp: delete reverse proxy
  - delete_cl: delete cluster
  - delete_pj: delete project
- - delete: delete reverse proxy and delete clsuter (in this order)
+ - delete: delete reverse proxy and delete cluster (in this order)
  - get_cred: init kubectl
  - info: display trainees infos
  - -h, --help: display this help message
@@ -194,7 +194,7 @@ Usage:
 
 La function *get_cluster_credentials* va être testée, car elle ne contient qu'une seule commande.
 ```shell
-test_get_cluster_credentials_should_be_successful() {
+test__get_cluster_credentials_should_be_successful() {
   source "${SCRIPT_PATH}" --source-only
   # workaround: disable 'set -o errexit'
   set +e
@@ -211,7 +211,7 @@ Fetching cluster endpoint and auth data.
 ERROR: (gcloud.container.clusters.get-credentials) ResponseError: code=403, message=Project lookup error: permission denied on resource 'projects/formation-ci-laurent' (or it may not exist).
 ```
 
-Il faut donc bouchonner la commande **gcloud**.
+Il faut donc bouchonner la commande `gcloud`.
 ```shell
 # Mock "gcloud" command
 # save command line in gcloud_log file
@@ -240,12 +240,12 @@ assertEquals 'Wrong gcloud cmd' 'gcloud container clusters get-credentials forma
 
 Dans un script, des messages sont affichés dans la console pour que la personne qui l'exécute puisse suivre ce qu'il se passe.
 Ces messages sont à capturer, car ils indiquent la bonne exécution du process.
-Les messages émis par la commande ou la fonction sont déjà capturés dans la variable **result**:
+Les messages émis par la commande ou la fonction sont déjà capturés dans la variable `result`:
 ```shell
   result=$(get_cluster_credentials)
 ```
 
-Une assertion va être ajoutée dans le test *test_get_cluster_credentials_should_be_successful* pour vérifier ces messages:
+Une assertion va être ajoutée dans le test `test__get_cluster_credentials_should_be_successful` pour vérifier ces messages:
 ```shell
   assertEquals 'Wrong result' '## Get credentials laurent' "${result}"
 ```
@@ -260,10 +260,10 @@ echo ${USER}
 ```
 Cette variable utilise le nom de l'utilisateur courant exécutant le script.
 
-Dans une CI, celle-ci risque d'être différente, voir inexistante. Il faut donc *stabiliser* ce comportement en forcant cette variable.
+Dans une CI, celle-ci risque d'être différente, voire inexistante. Il faut donc *stabiliser* ce comportement en forcant cette variable.
 Pour cela, il suffit de passer une variable ayant le même nom lors de l'appel de la fonction ou du source du script.
 
-Dans notre script cette variable d'environnement est utillisée pour initialiser une variable globale, il faut donc passer cette variable à moment où l'on source le script:
+Dans notre script cette variable d'environnement est utillisée pour initialiser une variable globale, il faut donc passer cette variable au moment où l'on source le script:
 ```shell
   USER=static_user source "${SCRIPT_PATH}" --source-only
 ```
@@ -285,7 +285,7 @@ L'assertion est à mettre à jour avec ce nouvel utilisateur:
 
 ## Simuler les retours et les codes retours
 
-### Connaitre les retours des commandes
+### Connaître les retours des commandes
 
 Dans le script, seulement 3 commandes ont leur retour qui est capturé pour être traité.
 Voici les commandes avec leur retour:
@@ -310,7 +310,7 @@ Ces retours vont être simulés.
 
 Il faut donc commencer avec la base de notre test:
 ```shell
-test_create_cluster_should_be_successful() {
+test__create_cluster_should_be_successful() {
   USER=static_user source "${SCRIPT_PATH}" --source-only
   # workaround: disable 'set -o errexit'
   set +e
@@ -342,7 +342,7 @@ gcloud services enable container.googleapis.com --project formation-ci-static_us
 gcloud container clusters create formation-ci --region europe-west1 --project formation-ci-static_user --preemptible --machine-type e2-standard-8 --num-nodes 1 --min-nodes 0 --max-nodes 3 --enable-autorepair --enable-autoscaling' "$(cat gcloud_log)"
 ```
 
-Le test unitaire est en erreur, car il manque les valeurs pour les variables ${orga} et ${billing_id}, nous allons donc les boucher à partir des résultats vu précédemment. Des comportements vont être ajoutés à la méthode bouchon **gcloud**:
+Le test unitaire échoue, car il manque les valeurs pour les variables `${orga}` et `${billing_id}`, nous allons donc les bouchonner à partir des résultats vus précédemment. Des comportements vont être ajoutés à la méthode bouchon `gcloud`:
 ```shell
 gcloud() {
   echo "${FUNCNAME[0]} $*" >>gcloud_log
@@ -363,7 +363,7 @@ gcloud() {
 }
 ```
 
-Et il faut remplacer les chaines ${orga} et ${billing_id} de l'assertion par les valeurs retournées:
+Et il faut remplacer les chaines `${orga}` et `${billing_id}` de l'assertion par les valeurs retournées:
 ```shell
   assertEquals 'gcloud config unset project
 gcloud organizations list --filter=DISPLAY_NAME=zenika.com --format=value(ID)
@@ -392,13 +392,13 @@ suite() {
   suite_addTest my_test2
 }
 ```
-Attention, cela surcharge le comportement de découverte des tests qui sont préfixés par *test*. Il faudra alors les ajouter dans la suite.
+Attention, cela surcharge le comportement de découverte des tests qui sont préfixés par `test`. Il faudra alors les ajouter individuellement dans la suite. Si on oublie de le faire, certains tests ne seront pas exécutés !
 
 **[Step_7]**
 
 ## Usage de skip
 
-Les functions **startSkipping** et **endSkipping** permettent de passer des assertion/fails des tests, mais qui seront comptabilisés:
+Les functions `startSkipping` et `endSkipping` permettent d'ignorer des assertions ou échecs des tests, mais qui seront comptabilisés:
 
 ```shell
 test_skippy() {
@@ -420,17 +420,17 @@ test_line_nb() {
     assertEquals 'not equals' 1 2
 }
 ```
-Attention: dans le cas de **${_ASSERT_EQUALS_}**, il faut doubler les quotes autour des chaines de caractères.
+Attention: dans le cas de `${_ASSERT_EQUALS_}`, il faut doubler les quotes autour des chaines de caractères.
 
 **[Step_9]**
 
 ## Les trucs qui perturbent shUnit2:
 
-Si un script contenant *set -o errexit* ou *set -e* est sourcé dans un test, shUnit2 fait cette erreur:
+Si un script contenant `set -o errexit` ou `set -e` est sourcé dans un test, shUnit2 émet cette erreur:
 ```
 ASSERT:Unknown failure encountered running a test
 ```
-La solution de contournement est de faire un *set +e* après le source
+La solution de contournement est de faire un `set +e` après le source
 ```bash
 test_with_source() {
   echo "${SCRIPT_PATH}"
@@ -441,7 +441,7 @@ test_with_source() {
 }
 ```
 
-Ne jamais bouchonner certaines commandes de base comme *chmod*, car elles peuvent être utilisées dans le fonctionnement interne de shUnit2. (j'en ai fait les frais)
+Ne jamais bouchonner certaines commandes de base comme `chmod`, car elles peuvent être utilisées dans le fonctionnement interne de shUnit2. (J'en ai fait les frais)
 
 # Sources:
 
