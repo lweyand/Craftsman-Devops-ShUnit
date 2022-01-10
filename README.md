@@ -56,7 +56,7 @@ __root_tst="$(cd "$(dirname "${__dir_tst}")" && pwd)" # <-- change this as it de
 
 SCRIPT_PATH="${__root_tst}/install_trainee_environment.sh"
 
-test_should_be_successfull() {
+test__should_be_successfull() {
   assertTrue "[ 0 -eq 0 ]"
 }
 
