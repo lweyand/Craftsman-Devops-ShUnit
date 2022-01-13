@@ -26,7 +26,7 @@ create_cluster() {
 
   # gcloud alpha billing accounts list
   printf "## Associate project ${project} and billing account\n"
-  billing_id=$(gcloud alpha billing accounts list --filter="NAME:Facturation Zenika" --format="value(ACCOUNT_ID)")
+  billing_id=$(gcloud alpha billing accounts list --filter="NAME:Zenika" --format="value(ACCOUNT_ID)")
   gcloud alpha billing projects link ${project} --billing-account "${billing_id}"
 
   printf "## Enable container.googleapis.com API\n"
