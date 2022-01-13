@@ -16,7 +16,24 @@ Installer shUnit2:
 ```shell
 sudo apt install shunit2
 ```
-/!\ Debian = version 2.1.6
+/!\ Debian (au 11/01/2022) = version 2.1.6
+La dernière version est 2.1.8
+
+## Sommaire:
+* Présentation
+* step_0 Mon premier shUnit
+* step_1 Préparer un script à être testable
+* step_2 Tester les retours attendus
+  * Le piège des espaces
+* step_3 Bouchonner les commandes
+* step_4 Capturer les sorties standard et erreur
+* step_5 Gérer les variables d'environnements
+* step_6 Simuler les retours et codes retours
+* Usages avancés
+  * step_7 Les suites de tests
+  * step_8 Usage de skip
+  * step_9 Asserts avec numéro de ligne
+* Ce qui perturble shunit2
 
 ## Sous le capot:
 
@@ -73,20 +90,6 @@ Exécuter les tests:
 
 **[Step_0]**
 
-### Exécuter un seul test
-
-```shell
-./tests/test_install_trainee_environment.sh -- test_should_be_successfull
-```
-
-Si shUnit est sourcé dans le script, il faut ajouter avant le source:
-```shell
-# Eat all command-line arguments before calling shunit2.
-shift $#
-# Load shUnit2.
-source "$(which shunit2)"
-```
-
 ## Préparer le script à être testable
 
 Créons le premier test de notre script:
@@ -128,9 +131,9 @@ test__should_fail_without_parameters() {
 
 Le test `test__should_fail_without_parameters` n'est pas satisfaisant en l'état, car il ne reflète pas l'intention du test: il doit être en erreur sans paramètre passé à la commande.
 
-Il faut donc tester le retour de la commande en erreur dans un assert
+Il faut donc tester le retour de la commande en erreur dans un assert (je parle de la capture des sorties plus bas):
 ```shell
-test_should_failed_without_parameters() {
+test__should_failed_without_parameters() {
   result=$(source "${SCRIPT_PATH}" 2>&1)
   code=$?
 
@@ -236,7 +239,7 @@ assertEquals 'Wrong gcloud cmd' 'gcloud container clusters get-credentials forma
 
 **[Step_3]**
 
-## Capturer les outputs
+## Capturer les sorties standard et erreur
 
 Dans un script, des messages sont affichés dans la console pour que la personne qui l'exécute puisse suivre ce qu'il se passe.
 Ces messages sont à capturer, car ils indiquent la bonne exécution du process.
@@ -336,7 +339,7 @@ Puis ajouter les assertions que nous savons faire:
   assertEquals 'gcloud config unset project
 gcloud organizations list --filter=DISPLAY_NAME=zenika.com --format=value(ID)
 gcloud projects create formation-ci-static_user --organization=${orga}
-gcloud alpha billing accounts list --filter=NAME:Facturation Zenika --format=value(ACCOUNT_ID)
+gcloud alpha billing accounts list --filter=NAME:Zenika --format=value(ACCOUNT_ID)
 gcloud alpha billing projects link formation-ci-static_user --billing-account ${billing_id}
 gcloud services enable container.googleapis.com --project formation-ci-static_user
 gcloud container clusters create formation-ci --region europe-west1 --project formation-ci-static_user --preemptible --machine-type e2-standard-8 --num-nodes 1 --min-nodes 0 --max-nodes 3 --enable-autorepair --enable-autoscaling' "$(cat gcloud_log)"
@@ -368,7 +371,7 @@ Et il faut remplacer les chaines `${orga}` et `${billing_id}` de l'assertion par
   assertEquals 'gcloud config unset project
 gcloud organizations list --filter=DISPLAY_NAME=zenika.com --format=value(ID)
 gcloud projects create formation-ci-static_user --organization=10000000000
-gcloud alpha billing accounts list --filter=NAME:Facturation Zenika --format=value(ACCOUNT_ID)
+gcloud alpha billing accounts list --filter=NAME:Zenika --format=value(ACCOUNT_ID)
 gcloud alpha billing projects link formation-ci-static_user --billing-account AAAAAA-BBBBBB-CCCCCC
 gcloud services enable container.googleapis.com --project formation-ci-static_user
 gcloud container clusters create formation-ci --region europe-west1 --project formation-ci-static_user --preemptible --machine-type e2-standard-8 --num-nodes 1 --min-nodes 0 --max-nodes 3 --enable-autorepair --enable-autoscaling' "$(cat gcloud_log)"
