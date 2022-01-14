@@ -26,7 +26,7 @@ create_cluster() {
 
   # gcloud alpha billing accounts list
   printf "## Associate project ${project} and billing account\n"
-  billing_id=$(gcloud alpha billing accounts list --filter="NAME:Facturation Zenika" --format="value(ACCOUNT_ID)")
+  billing_id=$(gcloud alpha billing accounts list --filter="NAME:Zenika" --format="value(ACCOUNT_ID)")
   gcloud alpha billing projects link ${project} --billing-account "${billing_id}"
 
   printf "## Enable container.googleapis.com API\n"
@@ -123,7 +123,7 @@ usage() {
     printf " - delete_rp: delete reverse proxy \n"
     printf " - delete_cl: delete cluster \n"
     printf " - delete_pj: delete project \n"
-    printf " - delete: delete reverse proxy and delete clsuter (in this order) \n"
+    printf " - delete: delete reverse proxy and delete cluster (in this order) \n"
     printf " - get_cred: init kubectl \n"
     printf " - info: display trainees infos \n"
     printf " - -h, --help: display this help message \n"
