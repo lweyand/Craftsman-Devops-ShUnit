@@ -20,7 +20,7 @@ sudo apt install shunit2
 La dernière version est 2.1.8
 
 ## Sommaire:
-* Présentation
+* Présentation (Sous le capot)
 * step_0 Mon premier shUnit
 * step_1 Préparer un script à être testable
 * step_2 Tester les retours attendus
@@ -33,7 +33,7 @@ La dernière version est 2.1.8
   * step_7 Les suites de tests
   * step_8 Usage de skip
   * step_9 Asserts avec numéro de ligne
-* Ce qui perturble shunit2
+* Ce qui perturbe shunit2
 
 ## Sous le capot:
 
@@ -73,18 +73,17 @@ __root_tst="$(cd "$(dirname "${__dir_tst}")" && pwd)" # <-- change this as it de
 
 SCRIPT_PATH="${__root_tst}/install_trainee_environment.sh"
 
-test__should_be_successfull() {
+test__should_be_successful() {
   assertTrue "[ 0 -eq 0 ]"
 }
 
-# Eat all command-line arguments before calling shunit2.
-shift $#
 # Load shUnit2.
 source "$(which shunit2)"
 ```
 
 Exécuter les tests:
 ```bash
+chmod +x tests/test_install_trainee_environment.sh
 ./tests/test_install_trainee_environment.sh
 ```
 
@@ -165,7 +164,7 @@ Solution: supprimer les **' \n'** du script d'origine
 
 Amélioration: mettre le message attendu dans un fichier externe.
 ```shell
-nano tests/expected/usage_message.txt:
+nano tests/expected/usage_message.txt
 ```
 
 ```txt
@@ -259,14 +258,15 @@ Une assertion va être ajoutée dans le test `test__get_cluster_credentials_shou
 
 Le script à tester utilise implicitement une variable d'environnement: ${USER}
 ```shell
-echo ${USER}
+$ env | grep USER
+USER=laurent
 ```
 Cette variable utilise le nom de l'utilisateur courant exécutant le script.
 
 Dans une CI, celle-ci risque d'être différente, voire inexistante. Il faut donc *stabiliser* ce comportement en forcant cette variable.
 Pour cela, il suffit de passer une variable ayant le même nom lors de l'appel de la fonction ou du source du script.
 
-Dans notre script cette variable d'environnement est utillisée pour initialiser une variable globale, il faut donc passer cette variable au moment où l'on source le script:
+Dans notre script cette variable d'environnement est utillisée pour initialiser une variable globale `project`, il faut donc passer cette variable au moment où l'on source le script:
 ```shell
   USER=static_user source "${SCRIPT_PATH}" --source-only
 ```
@@ -300,11 +300,6 @@ $ gcloud organizations list --filter="DISPLAY_NAME=zenika.com" --format="value(I
 ```shell
 $ gcloud alpha billing accounts list --filter="NAME:Zenika" --format="value(ACCOUNT_ID)"
 AAAAAA-BBBBBB-CCCCCC
-```
-
-```shell
-kubectl get service reverse-proxy -o jsonpath="{.status.loadBalancer.ingress[*].ip}"
-127.0.0.1
 ```
 
 Ces retours vont être simulés.
@@ -355,7 +350,7 @@ gcloud() {
       printf "10000000000"
       return 0
       ;;
-    'alpha billing accounts list --filter=NAME:Facturation Zenika --format=value(ACCOUNT_ID)')
+    'alpha billing accounts list --filter=NAME:Zenika --format=value(ACCOUNT_ID)')
       printf "AAAAAA-BBBBBB-CCCCCC"
       return 0
       ;;
@@ -404,11 +399,13 @@ Attention, cela surcharge le comportement de découverte des tests qui sont pré
 Les functions `startSkipping` et `endSkipping` permettent d'ignorer des assertions ou échecs des tests, mais qui seront comptabilisés:
 
 ```shell
-test_skippy() {
+test__skippy() {
   assertTrue "[ 0 -eq 0 ]"
+
   startSkipping
   assertTrue "[ 0 -eq 1 ]"
   endSkipping
+
   assertTrue "[ 0 -eq 0 ]"
 }
 ```
@@ -418,7 +415,7 @@ test_skippy() {
 ## Asserts avec numéros de ligne
 
 ```shell
-test_line_nb() {
+test__line_nb() {
     ${_ASSERT_EQUALS_} "'not equals'" 1 2
     assertEquals 'not equals' 1 2
 }
